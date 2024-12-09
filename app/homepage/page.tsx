@@ -1,11 +1,9 @@
-'use client';
-
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface Subcategory {
   id: number;
   name: string;
-  url: string;
 }
 
 interface Category {
@@ -14,42 +12,26 @@ interface Category {
   subcategories: Subcategory[];
 }
 
-const categories: Category[] = [
-  {
-    id: 1,
-    name: "Kategori Jasa 1",
-    subcategories: [
-      { id: 1, name: "Subkategori Jasa 1", url: "/subkategori/jasa-1" },
-      { id: 2, name: "Subkategori Jasa 2", url: "/subkategori/jasa-2" },
-      { id: 3, name: "Subkategori Jasa 3", url: "/subkategori/jasa-3" },
-    ],
-  },
-  {
-    id: 2,
-    name: "Kategori Jasa 2",
-    subcategories: [
-      { id: 4, name: "Subkategori Jasa 1", url: "/subkategori/jasa-4" },
-      { id: 5, name: "Subkategori Jasa 2", url: "/subkategori/jasa-5" },
-      { id: 6, name: "Subkategori Jasa 3", url: "/subkategori/jasa-6" },
-    ],
-  },
-  {
-    id: 3,
-    name: "Kategori Jasa 3",
-    subcategories: [
-      { id: 7, name: "Subkategori Jasa 1", url: "/subkategori/jasa-7" },
-      { id: 8, name: "Subkategori Jasa 2", url: "/subkategori/jasa-8" },
-      { id: 9, name: "Subkategori Jasa 3", url: "/subkategori/jasa-9" },
-    ],
-  },
-];
-
 const HomePage: React.FC = () => {
+  const router = useRouter();
+  const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredSubcategories, setFilteredSubcategories] = useState<Subcategory[]>(
-    []
-  );
+  const [filteredSubcategories, setFilteredSubcategories] = useState<Subcategory[]>([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch("/api/categories"); // Panggil API baru
+        const data: Category[] = await response.json();
+        setCategories(data);
+      } catch (err) {
+        console.error("Error fetching categories:", err);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const handleCategoryChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const value = parseInt(event.target.value, 10);
@@ -72,14 +54,8 @@ const HomePage: React.FC = () => {
     }
   };
 
-  const handleSubcategoryClick = (name: string) => {
-    const formattedName = name.toLowerCase().replace(/\s+/g, "-");
-    const url = `/subkategori/${formattedName}`;
-    window.location.href = url; 
-  };
-
-  const formatName = (name: string) => {
-    return name.toLowerCase().replace(/\s+/g, "-");
+  const handleSubcategoryClick = (subcategoryId: number, subcategoryName: string) => {
+    router.push(`/subcategory?id=${subcategoryId}&name=${subcategoryName}`);
   };
 
   return (
@@ -115,9 +91,7 @@ const HomePage: React.FC = () => {
       <div>
         {selectedCategory && (
           <div>
-            <h3>
-              {categories.find((cat) => cat.id === selectedCategory)?.name}
-            </h3>
+            <h3>{categories.find((cat) => cat.id === selectedCategory)?.name}</h3>
             <ul>
               {filteredSubcategories.map((subcat) => (
                 <li
@@ -127,9 +101,9 @@ const HomePage: React.FC = () => {
                     color: "blue",
                     textDecoration: "underline",
                   }}
-                  onClick={() => handleSubcategoryClick(subcat.name)}
+                  onClick={() => handleSubcategoryClick(subcat.id, subcat.name)}
                 >
-                  {formatName(subcat.name)} {/* Display the formatted name */}
+                  {subcat.name}
                 </li>
               ))}
             </ul>
